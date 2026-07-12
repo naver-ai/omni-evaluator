@@ -1,6 +1,6 @@
 # Demo
 
-[![OmniEvaluator Demo](https://github.com/naver-ai/omni-evaluator/blob/main/demo/thumbnail.png)]
+![OmniEvaluator Demo](https://github.com/naver-ai/omni-evaluator/blob/main/demo/thumbnail.png)
 
 **OmniEvaluator** is a composable system for reproducible omni-modal (text, image, video, audio) model evaluation. The demo video walks through three core workflows.
 
