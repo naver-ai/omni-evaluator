@@ -1,0 +1,48 @@
+meta:
+  benchmark_name: "meld_emotion"
+  split: "test"
+  lang: "en"
+  input_modality: ["audio", "text"]
+  output_modality: ["text"]
+  task_type: ["audio_understanding"]
+  subtask_type: ["emotion"]
+dataset:
+  source: "huggingface_hub"
+  path: "AudioLLMs/meld_emotion_test"
+  split: "test"
+  audio_decode: false
+  audio_column: ["context"]
+prompts:
+  direct:
+    system_prompt:
+    task_prompt:
+  reasoning:
+    system_prompt:
+    task_prompt:
+inference:
+  generation_options:
+    max_new_tokens: 256
+postprocess:
+  direct: {}
+  reasoning:
+    pipeline: ['think']
+evaluation:
+  method: "generation"
+  target_metrics:
+    judge_evaluator:
+      judge_rating:
+        lang: "en"
+        judge_model: "gpt-5-mini"
+        max_tokens: 1024
+        temperature: 0.0
+        top_p: 1.0
+        seed: 42
+        do_async: true
+      judge_binary:
+        lang: "en"
+        judge_model: "gpt-5-mini"
+        max_tokens: 1024
+        temperature: 0.0
+        seed: 42
+        do_async: true
+  display_metrics: ["judge_rating", "judge_binary"]

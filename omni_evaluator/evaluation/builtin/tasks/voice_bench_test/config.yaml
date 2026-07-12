@@ -1,0 +1,43 @@
+meta:
+  benchmark_name: "voice_bench"
+  split: "test"
+  lang: "en"
+  input_modality: ["audio", "text"]
+  output_modality: ["text"]
+  task_type: ["audio_understanding"]
+  subtask_type: ["freeform"]
+  num_sample_repetition: 1
+dataset:
+  source: "huggingface_hub"
+  path: "hlt-lab/voicebench"
+  name: ["advbench", "alpacaeval_full", "alpacaeval_speaker", "bbh", "commoneval",
+    "ifeval", "mmsu", "openbookqa", "sd-qa", "wildvoice"]
+  split:
+  - test
+  - test
+  - 
+  - test
+  - test
+  - test
+  - 
+  - test
+  - 
+  - test
+  audio_decode: false
+  audio_column: ["audio", "audio1", "audio2"]
+prompts:
+  direct:
+    system_prompt:
+    task_prompt:
+  reasoning:
+    system_prompt:
+    task_prompt:
+inference:
+  generation_options:
+    max_new_tokens: 2048
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      voice_bench_eval: {}
+  display_metrics: ["average"]

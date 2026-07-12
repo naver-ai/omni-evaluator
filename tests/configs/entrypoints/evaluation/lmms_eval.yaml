@@ -1,0 +1,20 @@
+# LMMS-Eval evaluation engine configuration
+# Multimodal benchmarks via the LMMS-Eval framework.
+
+inference_engine: "huggingface"
+evaluation_engine: "lmms_eval"
+model_name_or_path: "Qwen/Qwen2.5-Omni-3B"
+exp_name: "qwen2_5_omni_3b"
+
+benchmarks: "ai2d,textvqa,chartqa"
+
+torch_dtype: "float16"
+device_map: "auto"
+max_new_tokens: 4096
+trust_remote_code: true
+
+do_async: true
+batch_size: 32
+
+verbose: true
+postprocess_verbose: true

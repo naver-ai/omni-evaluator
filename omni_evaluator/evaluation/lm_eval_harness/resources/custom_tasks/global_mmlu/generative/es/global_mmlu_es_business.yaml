@@ -1,0 +1,4 @@
+# Generated for generative global_mmlu
+include: _es_template_yaml
+process_docs: !function utils.process_business
+task: global_mmlu_generative_es_business

@@ -1,0 +1,62 @@
+meta:
+  benchmark_name: "mmmu"
+  split: "validation"
+  lang: "en"
+  input_modality: ["image", "text"]
+  output_modality: ["text"]
+  task_type: ["visual_question_answering"]
+  subtask_type: ["multiple_choice", "freeform"]
+dataset:
+  source: "huggingface_hub"
+  path: "MMMU/MMMU"
+  name: ["Accounting", "Agriculture", "Architecture_and_Engineering", "Art", "Art_Theory",
+    "Basic_Medical_Science", "Biology", "Chemistry", "Clinical_Medicine", "Computer_Science",
+    "Design", "Diagnostics_and_Laboratory_Medicine", "Economics", "Electronics", "Energy_and_Power",
+    "Finance", "Geography", "History", "Literature", "Manage", "Marketing", "Materials",
+    "Math", "Mechanical_Engineering", "Music", "Pharmacy", "Physics", "Psychology",
+    "Public_Health", "Sociology"]
+  split: "validation"
+  combine:
+    method: "concatenate"
+  trust_remote_code: true
+prompts:
+  direct:
+    system_prompt:
+    # paper-strict (aligned with the multiple_choice_prompt default in lmms-eval mmmu_val).
+    # Our old empty "{}" was missing the instruction — the paper-strict mc_prompt
+    # must be appended at the end of the question.
+    task_prompt: "{query}\nAnswer with the option's letter from the given choices
+      directly."
+  reasoning:
+    system_prompt:
+    # ours-tuned reasoning prompt (separate from paper-strict). An extra instruction not in
+    # lmms-eval, but kept as the intended wording for our reasoning mode.
+    task_prompt: "{}\nGive step by step reasoning."
+inference:
+  generation_options:
+    max_new_tokens: 8192
+postprocess:
+  direct: {}
+  reasoning:
+    pipeline: ['think']
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      mmmu_accuracy: {}
+    judge_evaluator:
+      judge_binary:
+        lang: "en"
+        judge_model: "gpt-5-mini"
+        judge_prompt: "Compare the model's answer to the gold answer for the following
+          multimodal question.\nThe model output may include reasoning followed by
+          a final answer wrapped in \\boxed{{...}};\ntreat the boxed value as the
+          candidate answer. For multiple-choice questions the gold\nanswer is a single
+          letter (A/B/C/...). For open-ended questions, consider numerical and\nmathematical
+          equivalence (e.g., \"5\", \"5.0\", \"5/1\" are equal) and tolerate minor
+          wording\ndifferences when the meaning is unambiguous.\n\n## Question\n{dialogue}\n\
+          \n## Gold answer\n{label}\n\n## Model output\n{response}\n\nReply with only
+          **True** if the model's answer is correct, otherwise **False**."
+        max_tokens: 16
+        temperature: 1.0
+  display_metrics: ["judge_binary", "mmmu_accuracy"]

@@ -1,0 +1,23 @@
+# Anthropic API inference engine configuration
+# Requires ANTHROPIC_API_KEY environment variable.
+
+inference_engine: "api/anthropic"
+evaluation_engine: "builtin"
+api_name: "claude-sonnet-4-6"
+exp_name: "claude_sonnet_4"
+
+benchmarks: "ai2d_test"
+evaluation_methods: "generation"
+
+max_new_tokens: 4096
+
+do_async: true
+semaphore_size: 8
+batch_size: 32
+timeout_sync: 120
+timeout_async: 120
+max_retry: 3
+wait_between_retry: 5
+
+verbose: true
+postprocess_verbose: true

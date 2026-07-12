@@ -1,0 +1,31 @@
+# vLLM inference engine configuration
+# Endpoint (url, vllm_api_version) and the API key come from .env.test
+# (VLLM_URL / VLLM_API_VERSION / VLLM_API_KEY). Live vLLM tests healthcheck
+# the url and SKIP (with a warning) if the server is down — see
+# tests/inference/vllm/test_engine.py + skip_if_vllm_down (tests/conftest.py).
+
+inference_engine: "vllm"
+evaluation_engine: "builtin"
+exp_name: "seed-4b--risk-dapo-aux-480"
+reference_name: "seed-4b--risk-dapo-aux-480"
+
+benchmarks: "ai2d_test,textvqa_validation,chartqa_test"
+evaluation_methods: "generation,generation,generation"
+
+torch_dtype: "float16"
+max_new_tokens: 4096
+min_pixels: 250880
+max_pixels: 3211264
+trust_remote_code: true
+
+debug: true
+do_async: true
+semaphore_size: 8
+batch_size: 32
+timeout_sync: 120
+timeout_async: 120
+max_retry: 3
+wait_between_retry: 5
+
+verbose: true
+postprocess_verbose: true

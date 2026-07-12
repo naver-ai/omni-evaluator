@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="OmniEvaluator — a composable evaluation system for reproducible omni-modal foundation models. Unified leaderboard across text, vision, and audio.">
+    <title>OmniEvaluator</title>
+    <link rel="icon" href="assets/omni-favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="public.css?v=7">
+  </head>
+  <body>
+    <div class="bg-tint" aria-hidden="true"></div>
+
+    <div class="page-wrap">
+      <header class="top-nav" data-reveal>
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span>OmniEvaluator</span>
+        </div>
+        <nav class="nav-links">
+          <a href="#news-notice">News</a>
+          <a href="#abstract">Abstract</a>
+          <a href="#figure1">Pipeline</a>
+          <a href="#leaderboard">Leaderboard</a>
+          <a href="#examples">Examples</a>
+          <a href="#citation">BibTeX</a>
+        </nav>
+      </header>
+
+      <main class="page-content">
+        <!-- HERO -->
+        <section class="hero" data-reveal>
+          <div class="hero-badge">Public Dashboard · 2026</div>
+          <h1 class="hero-title">OmniEvaluator</h1>
+          <p class="hero-subtitle">
+            A Composable Evaluation System for Reproducible Omni-Modal Foundation Models
+          </p>
+          <!-- TODO: replace placeholder authors/affiliations with the real list -->
+          <div class="hero-authors">
+            Vision Understanding Team<sup>1</sup>
+          </div>
+          <div class="hero-affiliations">
+            <sup>1</sup>NAVER Cloud
+          </div>
+          <div class="hero-links">
+            <a class="cta-pill" href="https://arxiv.org" target="_blank" rel="noreferrer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>arXiv</a>
+            <a class="cta-pill" href="https://github.com/naver-ai/omni-evaluator" target="_blank" rel="noreferrer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>Code</a>
+            <a class="cta-pill ghost" href="#leaderboard"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/><rect x="17" y="13" width="3" height="4"/></svg>Leaderboard</a>
+            <a class="cta-pill ghost" href="#examples"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Examples</a>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-card">
+              <div class="stat-value" data-stat="models">--</div>
+              <div class="stat-label">Models</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" data-stat="benchmarks">--</div>
+              <div class="stat-label">Benchmarks</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" data-stat="modalities">--</div>
+              <div class="stat-label">Modalities</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- NEWS -->
+        <section id="news-notice" class="section-block" data-reveal>
+          <div class="section-head">
+            <div class="section-kicker">Updates</div>
+            <h2 class="section-title">News &amp; Notice</h2>
+          </div>
+          <div class="news-grid">
+            <article class="news-card">
+              <div class="news-date">2026.07</div>
+              <div class="news-title">OmniEvaluator is now public.</div>
+              <div class="news-subtitle">The unified omni-modal leaderboard across text, vision, and audio is publicly released.</div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ABSTRACT -->
+        <section id="abstract" class="section-block" data-reveal>
+          <div class="section-head">
+            <div class="section-kicker">Overview</div>
+            <h2 class="section-title">Abstract</h2>
+          </div>
+          <p class="body-text">
+            Foundation models are increasingly omni-modal, yet their evaluation remains fragmented
+            across modality-specific toolchains, prompt conventions, and metric implementations,
+            making comprehensive assessment costly and cross-paper comparison unreliable. We present
+            OmniEvaluator, a composable evaluation system that makes existing evaluators interoperable
+            through a shared intermediate schema without reimplementation, while every run produces a
+            provenance-rich artifact that fully captures the configuration needed for reproduction.
+            The system currently integrates four inference backends and five evaluation frameworks
+            covering over 2,000 benchmarks spanning text, image, video, and audio. On top of this
+            architecture, OmniEvaluator provides a unified omni-modal leaderboard with weighted scoring
+            for model selection, an LLM-as-a-judge mechanism that normalizes heterogeneous metrics onto
+            a comparable scale, and a federated evaluation pipeline for efficient GPU utilization.
+          </p>
+        </section>
+
+        <!-- PIPELINE -->
+        <section id="figure1" class="section-block" data-reveal>
+          <div class="section-head">
+            <div class="section-kicker">System</div>
+            <h2 class="section-title">Pipeline</h2>
+          </div>
+          <figure class="figure-card">
+            <div class="figure-media-wrap">
+              <img class="figure-image" src="assets/architecture.png?v=3" alt="OmniEvaluator architecture diagram">
+            </div>
+            <figcaption class="figure-caption">Figure 1. OmniEvaluator pipeline architecture.</figcaption>
+          </figure>
+        </section>
+
+        <!-- LEADERBOARD -->
+        <section id="leaderboard" class="section-block" data-reveal>
+          <div class="section-head">
+            <div class="section-kicker">Leaderboard</div>
+            <h2 class="section-title">Top Models by Modality</h2>
+          </div>
+          <div class="modality-tabs">
+            <button class="modality-btn" data-modality="text" type="button">Text</button>
+            <button class="modality-btn" data-modality="vision" type="button">Vision</button>
+            <button class="modality-btn" data-modality="audio" type="button">Audio</button>
+          </div>
+          <p class="body-text muted lb-note">
+            Every score is on an <strong>absolute 0–100 scale</strong> (accuracy ×100, percentages as-is,
+            range-free metrics by their max). <strong>Overall</strong> is the plain average of a model's
+            scores, and <strong>Benchmarks</strong> is how many it was scored on — so a high Overall from
+            few benchmarks is visible. Best per column is <strong>bold</strong>; sorted by Overall by default.
+          </p>
+          <div class="table-wrap">
+            <table id="leaderboard-table" class="leaderboard-table"></table>
+          </div>
+        </section>
+
+        <!-- EXAMPLES -->
+        <section id="examples" class="section-block" data-reveal>
+          <div class="section-head">
+            <div class="section-kicker">Qualitative</div>
+            <h2 class="section-title">Examples</h2>
+          </div>
+          <p class="body-text muted">Illustrative samples (one per modality — text, image, audio, video). Predictions and models are synthetic, for layout preview only.</p>
+          <div id="examples-list" class="examples-grid"></div>
+        </section>
+
+        <!-- CITATION -->
+        <section id="citation" class="section-block" data-reveal>
+          <div class="section-head">
+            <div class="section-kicker">Cite</div>
+            <h2 class="section-title">BibTeX</h2>
+          </div>
+          <pre class="bibtex"><code>@article{omnievaluator2026,
+  title   = {OmniEvaluator: A Composable Evaluation System for
+             Reproducible Omni-Modal Foundation Models},
+  author  = {Vision Understanding Team},
+  journal = {arXiv preprint arXiv:2026.XXXXX},
+  year    = {2026}
+}</code></pre>
+        </section>
+      </main>
+
+      <footer class="page-footer">
+        OmniEvaluator · Public Dashboard · NAVER Cloud
+      </footer>
+    </div>
+    <script src="public.js?v=7" defer></script>
+  </body>
+</html>

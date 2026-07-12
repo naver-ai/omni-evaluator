@@ -1,0 +1,44 @@
+meta:
+  benchmark_name: "imo_answer_bench"
+  split: "test"
+  lang: "en"
+  input_modality: ["text"]
+  output_modality: ["text"]
+  task_type: ["unknown"]
+  subtask_type: ["math"]
+dataset:
+  source: "huggingface_hub"
+  path: "OpenEvals/IMO-AnswerBench"
+  split: "train"
+prompts:
+  direct:
+    system_prompt:
+    task_prompt: "{}\nPlease put your final answer within \\boxed{{}}."
+  reasoning:
+    system_prompt:
+    task_prompt: "{}\nPlease reason step by step, and put your final answer within
+      \\boxed{{}}."
+inference:
+  direct:
+    generation_options:
+      max_new_tokens: 2048
+  reasoning:
+    generation_options:
+      max_new_tokens: 16384
+postprocess:
+  direct:
+    pipeline: ['boxed']
+  reasoning:
+    pipeline: ['think', 'boxed']
+evaluation:
+  method: "generation"
+  # NOTE: IMO-AnswerBench answers take many forms (numbers, expressions,
+  # intervals, functions), so string exact_match is a CONSERVATIVE lower bound —
+  # a correct-but-differently-formatted answer may score 0. The official
+  # protocol uses an LLM judge for math equivalence; add a judge_evaluator here
+  # if a stricter/looser measure is needed.
+  do_normalize: true
+  target_metrics:
+    text_evaluator:
+      exact_match: {}
+  display_metrics: ["exact_match"]

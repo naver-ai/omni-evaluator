@@ -1,0 +1,20 @@
+# VLMEvalKit evaluation engine configuration
+# Vision-language benchmarks via the VLMEvalKit framework.
+
+inference_engine: "huggingface"
+evaluation_engine: "vlm_eval_kit"
+model_name_or_path: "Qwen/Qwen2.5-Omni-3B"
+exp_name: "qwen2_5_omni_3b"
+
+benchmarks: "AI2D_TEST,TextVQA_VAL,ChartQA_TEST"
+
+torch_dtype: "float16"
+device_map: "auto"
+max_new_tokens: 4096
+trust_remote_code: true
+
+do_async: true
+batch_size: 32
+
+verbose: true
+postprocess_verbose: true

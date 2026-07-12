@@ -1,0 +1,42 @@
+meta:
+  benchmark_name: "mu_chomusic"
+  split: "test"
+  lang: "en"
+  input_modality: ["audio", "text"]
+  output_modality: ["text"]
+  task_type: ["audio_understanding"]
+  subtask_type: ["music"]
+dataset:
+  source: "huggingface_hub"
+  path: "AudioLLMs/mu_chomusic_test"
+  split: "test"
+  audio_decode: false
+  audio_column: ["context"]
+prompts:
+  direct:
+    system_prompt:
+    task_prompt: "{}\nAnswer with the option's letter from the given choices directly."
+  reasoning:
+    system_prompt:
+    task_prompt:
+inference:
+  generation_options:
+    max_new_tokens: 64
+postprocess:
+  direct: {}
+  reasoning:
+    pipeline: ['think']
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      exact_match: {}
+    judge_evaluator:
+      judge_binary:
+        lang: "en"
+        judge_model: "gpt-5-mini"
+        max_tokens: 1024
+        temperature: 0.0
+        seed: 42
+        do_async: true
+  display_metrics: ["exact_match", "judge_binary"]

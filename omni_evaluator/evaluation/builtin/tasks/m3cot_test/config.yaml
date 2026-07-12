@@ -1,0 +1,34 @@
+meta:
+  benchmark_name: "m3cot"
+  split: "test"
+  lang: "en"
+  input_modality: ["image", "text"]
+  output_modality: ["text"]
+  task_type: ["visual_question_answering"]
+  subtask_type: ["multiple_choice", "reasoning"]
+dataset:
+  source: "huggingface_hub"
+  path: "LightChen2333/M3CoT"
+  split: "test"
+prompts:
+  direct:
+    system_prompt:
+    task_prompt: "{}\nAnswer with the option's letter from the given choices directly."
+  reasoning:
+    system_prompt:
+    task_prompt: "{}\nPlease first conduct reasoning step by step, and then answer
+      the question with the correct option letter (e.g., A, B, C, D) at the end."
+inference:
+  generation_options:
+    max_new_tokens: 64
+postprocess:
+  direct:
+    pipeline: ['multichoice']
+  reasoning:
+    pipeline: ['think', 'multichoice']
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      exact_match: {}
+  display_metrics: ["exact_match"]

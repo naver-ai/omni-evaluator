@@ -1,0 +1,46 @@
+meta:
+  benchmark_name: "covost2"
+  split: "en2zh_test"
+  lang: "en"
+  input_modality: ["audio", "text"]
+  output_modality: ["text"]
+  task_type: ["speech_translation"]
+  subtask_type: ["asr"]
+dataset:
+  source: "huggingface_hub"
+  path: "AudioLLMs/covost2_en_zh_test"
+  split: "test"
+  audio_decode: false
+  audio_column: ["context"]
+prompts:
+  direct:
+    system_prompt:
+    task_prompt:
+  reasoning:
+    system_prompt:
+    task_prompt:
+inference:
+  generation_options:
+    max_new_tokens: 1024
+postprocess:
+  asr:
+    version_name: "default_chinese"
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      bleu:
+        do_normalize: "chinese"
+      wer:
+        do_normalize: "chinese"
+      cer:
+        do_normalize: "chinese"
+    judge_evaluator:
+      judge_binary:
+        lang: "en"
+        judge_model: "gpt-5-mini"
+        max_tokens: 1024
+        temperature: 0.0
+        seed: 42
+        do_async: true
+  display_metrics: ["bleu", "wer", "cer", "judge_binary"]

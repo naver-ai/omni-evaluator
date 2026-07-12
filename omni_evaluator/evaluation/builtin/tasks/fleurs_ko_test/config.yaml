@@ -1,0 +1,38 @@
+meta:
+  benchmark_name: "fleurs"
+  split: "ko_test"
+  lang: "ko"
+  input_modality: ["audio", "text"]
+  output_modality: ["text"]
+  task_type: ["speech_recognition"]
+  subtask_type: ["asr"]
+dataset:
+  source: "huggingface_hub"
+  path: "google/fleurs"
+  name: "ko_kr"
+  split: "test"
+  audio_decode: false
+  audio_column: ["audio"]
+  trust_remote_code: true
+prompts:
+  direct:
+    system_prompt:
+    task_prompt:
+  reasoning:
+    system_prompt:
+    task_prompt:
+inference:
+  generation_options:
+    max_new_tokens: 1024
+postprocess:
+  asr:
+    version_name: "default_korean"
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      wer:
+        do_normalize: "korean"
+      cer:
+        do_normalize: "korean"
+  display_metrics: ["wer", "cer"]

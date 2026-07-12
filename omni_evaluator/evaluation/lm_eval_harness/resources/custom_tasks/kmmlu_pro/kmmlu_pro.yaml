@@ -1,0 +1,5 @@
+task: kmmlu_pro
+dataset_name: kmmlu_pro
+include: _default_kmmlu_pro.yaml
+metadata:
+  version: 1.0

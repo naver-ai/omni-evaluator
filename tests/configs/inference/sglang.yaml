@@ -1,0 +1,26 @@
+# SGLang inference engine configuration
+# Requires a running SGLang server. Adjust url and exp_name for your environment.
+
+inference_engine: "sglang"
+evaluation_engine: "builtin"
+model_name_or_path: "Qwen/Qwen2.5-Omni-3B"
+url: "http://localhost:30000"
+exp_name: "qwen2_5_omni_3b"
+
+benchmarks: "ai2d_test"
+evaluation_methods: "generation"
+
+torch_dtype: "float16"
+max_new_tokens: 4096
+trust_remote_code: true
+
+do_async: true
+semaphore_size: 8
+batch_size: 32
+timeout_sync: 120
+timeout_async: 120
+max_retry: 3
+wait_between_retry: 5
+
+verbose: true
+postprocess_verbose: true

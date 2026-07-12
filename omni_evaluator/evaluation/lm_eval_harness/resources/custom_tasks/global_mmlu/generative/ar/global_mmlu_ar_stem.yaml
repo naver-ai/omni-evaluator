@@ -1,0 +1,4 @@
+# Generated for generative global_mmlu
+include: _ar_template_yaml
+process_docs: !function utils.process_stem
+task: global_mmlu_generative_ar_stem

@@ -1,0 +1,9 @@
+group: click_generative
+task:
+  - click_lang_generative
+  - click_cul_generative
+aggregate_metric_list:
+  - metric: exact_match
+    aggregation: mean
+metadata:
+  version: 1.0

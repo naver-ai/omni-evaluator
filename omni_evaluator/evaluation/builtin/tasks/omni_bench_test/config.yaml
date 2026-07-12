@@ -1,0 +1,86 @@
+meta:
+  benchmark_name: "omni_bench"
+  split: "test"
+  lang: "en"
+  input_modality: ["audio", "image", "text"]
+  output_modality: ["text"]
+  task_type: ["visual_question_answering"]
+  subtask_type: ["multiple_choice"]
+dataset:
+  source: "huggingface_hub"
+  path: "m-a-p/OmniBench"
+  split: "train"
+  audio_decode: false
+prompts:
+  direct:
+    system_prompt:
+    # paper-strict (aligned with lmms-eval omni_bench utils.py:18).
+    # custom.py:sample_to_record builds `_query = f"Question:\n{question}"`,
+    # so the instruction comes last (layout: Question -> Options -> instruction).
+    task_prompt: "{query}\n\nOptions:\n{option_contents}\n\nAnswer with the option's
+      letter from the given choices directly."
+  reasoning:
+    system_prompt:
+    task_prompt: "{query}\n\nOptions:\n{option_contents}\n\nAnswer with the option's
+      letter from the given choices directly."
+inference:
+  config:
+    audio: true
+    audio_transcript: false
+    image: true
+    image_caption: false
+  generation_options:
+    max_new_tokens: 4096
+postprocess:
+  direct: {}
+  reasoning:
+    pipeline: ['think']
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      exact_match: {}
+    # judge_evaluator:
+    #   judge_binary_omni:
+    #     lang: "en"
+    #     # judge_model: "gemini-2.5-flash-lite"
+    #     max_tokens: 4096
+    #     temperature: 0.0
+    #     seed: 42
+    #     process_message_kwargs:
+    #       remove_audio: false
+    #       remove_image: false
+    #       remove_video: false
+    #   judge_binary_alm_caption:
+    #     lang: "en"
+    #     # judge_model: "gemini-2.5-flash-lite"
+    #     max_tokens: 4096
+    #     temperature: 0.0
+    #     seed: 42
+    #     process_message_kwargs:
+    #       remove_audio: false
+    #       remove_image: true
+    #       remove_video: false
+    #       image_content_key: "image_content"
+    #   judge_binary_vlm_transcription:
+    #     lang: "en"
+    #     # judge_model: "gemini-2.5-flash-lite"
+    #     max_tokens: 4096
+    #     temperature: 0.0
+    #     seed: 42
+    #     process_message_kwargs:
+    #       remove_audio: true
+    #       remove_image: false
+    #       remove_video: false
+    #       audio_content_key: "image_content"
+    #   judge_binary_vlm:
+    #     lang: "en"
+    #     # judge_model: "gemini-2.5-flash-lite"
+    #     max_tokens: 4096
+    #     temperature: 0.0
+    #     seed: 42
+    #     process_message_kwargs:
+    #       remove_audio: true
+    #       remove_image: false
+    #       remove_video: false
+  display_metrics: ["exact_match"]

@@ -1,0 +1,21 @@
+# Google Gemini API inference engine configuration
+# Requires GOOGLE_API_KEY environment variable.
+
+inference_engine: "api/google"
+evaluation_engine: "builtin"
+api_name: "gemini-3.1-flash-lite"
+exp_name: "gemini-3.1-flash-lite"
+
+benchmarks: "ai2d_test"
+evaluation_methods: "generation"
+
+max_new_tokens: 4096
+
+do_async: true
+inference_concurrency: 8
+request_timeout: 120
+max_retry: 3
+wait_between_retry: 5
+
+verbose: true
+postprocess_verbose: true

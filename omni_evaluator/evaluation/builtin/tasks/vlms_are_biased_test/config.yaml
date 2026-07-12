@@ -1,0 +1,35 @@
+meta:
+  benchmark_name: "vlms_are_biased"
+  split: "main"
+  lang: "en"
+  input_modality: ["image", "text"]
+  output_modality: ["text"]
+  task_type: ["visual_question_answering"]
+  subtask_type: ["reasoning"]
+dataset:
+  # Images are embedded in the HF parquet (Image feature), so no S3 staging is
+  # needed — sample_to_record decodes them directly.
+  source: "huggingface_hub"
+  path: "anvo25/vlms-are-biased"
+  split: "main"
+prompts:
+  # The dataset's ``prompt`` column already carries the full question plus the
+  # answer-format instruction (e.g. "Answer in curly brackets, e.g., {Yes}"),
+  # so no task_prompt template is applied.
+  system_prompt:
+  task_prompt:
+inference:
+  generation_options:
+    max_new_tokens: 64
+postprocess:
+  direct:
+    pipeline: ['curly']
+  reasoning:
+    pipeline: ['think', 'boxed', 'curly']
+evaluation:
+  method: "generation"
+  do_normalize: true
+  target_metrics:
+    text_evaluator:
+      exact_match: {}
+  display_metrics: ["exact_match"]

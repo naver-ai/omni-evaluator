@@ -1,0 +1,4 @@
+# Generated for generative global_mmlu
+include: _zh_template_yaml
+process_docs: !function utils.process_other
+task: global_mmlu_generative_zh_other

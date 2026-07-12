@@ -1,0 +1,24 @@
+dataset_path: EunsuKim/CLIcK
+test_split: train
+fewshot_split: train
+output_type: generate_until
+doc_to_text: !function utils.get_context
+# doc_to_choice: !function utils.get_choices
+doc_to_target: !function utils.get_target
+filter_list:
+  - name: "flexible-extract"
+    filter:
+      - function: "regex"
+        group_select: -1
+        regex_pattern: "정답은\\s*[\\'\\*]*\\(?([A-Z])\\)?[\\'\\*]*|답은\\s*[\\'\\*]*\\(?([A-Z])\\)?[\\'\\*]*|정답:\\s*[\\'\\*]*\\(?([A-Z])\\)?[\\'\\*]*|답:\\s*[\\'\\*]*\\(?([A-Z])\\)?[\\'\\*]*|([A-Z]):\\s|[Aa]:\\s*\\(?([A-Z])\\)?|[\\'\\*]*\\(?([A-Z])\\)?[\\'\\*]*.+[은는이가]\\s*올바른|[\\'\\*]*\\(?([A-Z])\\)?[\\'\\*]*.+[은는이가]\\s*정답|\\boxed\\{\\(?([A-Z])\\)?\\}|[^a-zA-Z0-9]([A-Z])[^a-zA-Z0-9]|^([A-Z])$"
+generation_kwargs:
+  until:
+    - "Question:"
+  max_gen_toks: 8192
+  do_sample: true
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 1.0

@@ -1,0 +1,28 @@
+tag:
+  - math_word_problems
+task: math_500
+dataset_path: HuggingFaceH4/MATH-500
+process_docs: !function utils.process_docs
+dataset_name: default
+output_type: generate_until
+test_split: test
+num_fewshot: 0
+doc_to_text: |
+  Solve the following math problem step by step. Put your answer inside \boxed{}.
+
+  {{problem}}
+
+  Remember to put your answer inside \boxed{}.
+process_results: !function utils.process_results
+doc_to_target: "{{answer}}"
+generation_kwargs:
+  until:
+    - "Problem:"
+  do_sample: false
+  temperature: 0
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 1.0

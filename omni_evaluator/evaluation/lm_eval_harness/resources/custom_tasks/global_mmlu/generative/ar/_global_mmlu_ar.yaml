@@ -1,0 +1,13 @@
+group: global_mmlu_generative_ar
+task:
+  - global_mmlu_generative_ar_business
+  - global_mmlu_generative_ar_humanities
+  - global_mmlu_generative_ar_medical
+  - global_mmlu_generative_ar_other
+  - global_mmlu_generative_ar_stem
+  - global_mmlu_generative_ar_social_sciences
+aggregate_metric_list:
+  - metric: exact_match
+    weight_by_size: True
+metadata:
+  version: 3.0

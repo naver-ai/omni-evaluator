@@ -1,0 +1,27 @@
+dataset_path: CohereForAI/Global-MMLU-Lite
+dataset_name: yo
+test_split: test
+fewshot_split: dev
+fewshot_config:
+  sampler: first_n
+num_fewshot: 0
+output_type: generate_until
+doc_to_text: "Beere ibeere ibi ti o lo pọ. Ila kinilẹ ti igbesi rẹ yẹ gbọdọ wà ni irisi yii: 'Idahun: A/B/C/D' (fun apẹẹrẹ, 'Idahun: A').\n\n{{question.strip()}}\nA. {{option_a}}\nB. {{option_b}}\nC. {{option_c}}\nD. {{option_d}}"
+doc_to_target: "{{answer}}"
+generation_kwargs:
+  until:
+    - "</s>"
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+    ignore_punctuation: true
+    ignore_case: true
+filter_list:
+  - name: "ai-analytics"
+    filter:
+      - function: "regex"
+        group_select: -1
+        regex_pattern: "[Ii]dahun[\\*\\_]{0,2}\\s*[:：][\\s\\*\\_]{0,2}\\s*\\(?([A-Z])(?![a-zA-Z0-9])|[\\*\\_]{0,2}[Aa]nswer[\\*\\_]{0,2}\\s*[:：][\\s\\*\\_]{0,2}\\s*\\(?([A-Z])(?![a-zA-Z0-9])|\\boxed\\{[^}]*([A-Z])[^}]*\\}|([A-Z])\\)\\s*$"
+metadata:
+  version: 3.0

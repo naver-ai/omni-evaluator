@@ -1,0 +1,42 @@
+meta:
+  benchmark_name: "cruxeval_o"
+  split: "test"
+  lang: "en"
+  input_modality: ["text"]
+  output_modality: ["text"]
+  task_type: ["code_generation"]
+  subtask_type: ["code", "reasoning"]
+dataset:
+  source: "huggingface_hub"
+  path: "cruxeval-org/cruxeval"
+  split: "test"
+prompts:
+  # The full prompt (code + `assert f(input) == ??` + [ANSWER] tag) is built in
+  # custom.py:sample_to_record, so no task_prompt template is applied.
+  direct:
+    system_prompt:
+    task_prompt:
+  reasoning:
+    system_prompt:
+    task_prompt:
+inference:
+  direct:
+    generation_options:
+      max_new_tokens: 512
+  reasoning:
+    generation_options:
+      max_new_tokens: 8192
+postprocess:
+  # `cruxeval_output` (custom) pulls the predicted literal out of the
+  # `[ANSWER] assert f(...) == <literal> [/ANSWER]` completion and canonicalizes
+  # it (ast.literal_eval -> repr) to match the canonicalized gold label.
+  direct:
+    pipeline: ['cruxeval_output']
+  reasoning:
+    pipeline: ['think', 'boxed', 'cruxeval_output']
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      exact_match: {}
+  display_metrics: ["exact_match"]

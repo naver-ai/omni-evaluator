@@ -1,0 +1,45 @@
+meta:
+  benchmark_name: "hike"
+  split: "test"
+  lang: "ko"
+  input_modality: ["audio", "text"]
+  output_modality: ["text"]
+  task_type: ["speech_recognition"]
+  subtask_type: ["asr"]
+dataset:
+  source: "huggingface_hub"
+  path: "thetaone-ai/HiKE"
+  split: "test"
+  audio_decode: false
+  audio_column: ["audio"]
+prompts:
+  direct:
+    system_prompt:
+    task_prompt:
+  reasoning:
+    system_prompt:
+    task_prompt:
+inference:
+  generation_options:
+    max_new_tokens: 1024
+postprocess:
+  asr: {}
+  postprocess:
+    loanwords:
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      mer:
+        do_normalize: "korean"
+      pier:
+        do_normalize: "korean"
+    judge_evaluator:
+      judge_binary:
+        lang: "en"
+        judge_model: "gpt-5-mini"
+        max_tokens: 1024
+        temperature: 0.0
+        seed: 42
+        do_async: true
+  display_metrics: ["mer", "pier", "judge_binary"]

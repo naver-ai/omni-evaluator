@@ -1,0 +1,24 @@
+meta:
+  benchmark_name: "music_avqa"
+  split: "test"
+  lang: "en"
+  input_modality: ["video", ]
+  output_modality: ["text", ]
+  task_type: ["visual_question_answering", ]
+  subtask_type: ["multiple_choice", ]
+dataset:
+  source: "huggingface_hub"
+  path: "gwkrsrch2/music_avqa"
+  split: "test"
+prompts:
+  system_prompt:
+  task_prompt:
+inference:
+  generation_options:
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      edit_distance: {}
+      anls: {}
+  display_metrics: ["anls", ]

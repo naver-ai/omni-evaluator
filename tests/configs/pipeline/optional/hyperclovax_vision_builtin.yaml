@@ -1,0 +1,16 @@
+inference_engine: "huggingface"
+evaluation_engine: "builtin"
+model_name_or_path: "naver-hyperclovax/HyperCLOVAX-SEED-Vision-Instruct-3B"
+exp_name: "pipeline_hyperclovax_vision"
+
+# image-input builtin benchmark (input_modality: [image, text], exact_match)
+benchmarks: "ai2d_test"
+evaluation_methods: "generation"
+
+torch_dtype: "float16"
+device_map: "auto"
+max_new_tokens: 512
+trust_remote_code: true
+
+do_async: true
+inference_concurrency: 8

@@ -1,0 +1,72 @@
+meta:
+  benchmark_name: "mmvet"
+  split: "test"
+  lang: "en"
+  input_modality: ["image", "text"]
+  output_modality: ["text"]
+  task_type: ["visual_question_answering"]
+  subtask_type: ["freeform"]
+dataset:
+  source: "huggingface_hub"
+  path: "whyu/mm-vet"
+  split: "test"
+prompts:
+  direct:
+    system_prompt:
+    task_prompt: "{}"
+  reasoning:
+    system_prompt:
+    task_prompt: "{}\nWhen provided with an image and a question, generate a rationale
+      first and then derive an answer. Your rationale should include detailed visual
+      elements in order to derive the answer. Return final answer in the \"Answer:
+      \" format in the end."
+inference:
+  generation_options:
+    max_new_tokens: 1024
+postprocess:
+  direct: {}
+  reasoning:
+    pipeline: ['think']
+evaluation:
+  method: "generation"
+  target_metrics:
+    judge_evaluator:
+      judge_rating:
+        lang: "en"
+        judge_model: "gpt-4o-2024-11-20"
+        judge_prompt: "Compare the ground truth and prediction from AI models, to
+          give a correctness score for the prediction. <AND> in the ground truth means
+          it is totally right only when all elements in the ground truth are present
+          in the prediction, and <OR> means it is totally right when any one element
+          in the ground truth is present in the prediction. The correctness score
+          is an integer from 0 (totally wrong) to 10 (totally right). Just complete
+          the last space of the correctness score.\n\n| Question | Ground truth |
+          Prediction | Correctness |\n| --- | --- | --- | --- |\n| What is x in the
+          equation? | -1 <AND> -5 | x = 3 | 0 |\n| What is x in the equation? | -1
+          <AND> -5 | x = -1 | 5 |\n| What is x in the equation? | -1 <AND> -5 | x
+          = -5 | 5 |\n| What is x in the equation? | -1 <AND> -5 | x = -5 or 5 | 5
+          |\n| What is x in the equation? | -1 <AND> -5 | x = -1 or x = -5 | 10 |\n\
+          | Can you explain this meme? | This meme is poking fun at the fact that
+          the names of the countries Iceland and Greenland are misleading. Despite
+          its name, Iceland is known for its beautiful green landscapes, while Greenland
+          is mostly covered in ice and snow. The meme is saying that the person has
+          trust issues because the names of these countries do not accurately represent
+          their landscapes. | The meme talks about Iceland and Greenland. It's pointing
+          out that despite their names, Iceland is not very icy and Greenland isn't
+          very green. | 4 |\n| Can you explain this meme? | This meme is poking fun
+          at the fact that the names of the countries Iceland and Greenland are misleading.
+          Despite its name, Iceland is known for its beautiful green landscapes, while
+          Greenland is mostly covered in ice and snow. The meme is saying that the
+          person has trust issues because the names of these countries do not accurately
+          represent their landscapes. | The meme is using humor to point out the misleading
+          nature of Iceland's and Greenland's names. Iceland, despite its name, has
+          lush green landscapes while Greenland is mostly covered in ice and snow.
+          The text 'This is why I have trust issues' is a playful way to suggest that
+          these contradictions can lead to distrust or confusion. The humor in this
+          meme is derived from the unexpected contrast between the names of the countries
+          and their actual physical characteristics. | 10 |\n| {dialogue} | {label}
+          | {response} |"
+        max_tokens: 16
+        temperature: 0.0
+        max_rating: 10
+  display_metrics: ["judge_rating"]

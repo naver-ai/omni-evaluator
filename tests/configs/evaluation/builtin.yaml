@@ -1,0 +1,21 @@
+# Built-in evaluation engine configuration
+# Custom vision/multimodal benchmarks built into omni_evaluator.
+
+inference_engine: "huggingface"
+evaluation_engine: "builtin"
+model_name_or_path: "Qwen/Qwen2.5-Omni-3B"
+exp_name: "qwen2_5_omni_3b"
+
+benchmarks: "ai2d_test,textvqa_validation,chartqa_test"
+evaluation_methods: "generation,generation,generation"
+
+torch_dtype: "float16"
+device_map: "auto"
+max_new_tokens: 4096
+trust_remote_code: true
+
+do_async: true
+batch_size: 32
+
+verbose: true
+postprocess_verbose: true

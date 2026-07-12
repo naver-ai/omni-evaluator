@@ -1,0 +1,21 @@
+# LM Evaluation Harness configuration
+# Text-based benchmarks via EleutherAI's lm-evaluation-harness.
+
+inference_engine: "huggingface"
+evaluation_engine: "lm_eval_harness"
+model_name_or_path: "Qwen/Qwen2.5-Omni-3B"
+exp_name: "qwen2_5_omni_3b"
+
+benchmarks: "gsm8k,arc_challenge,hellaswag"
+
+torch_dtype: "float16"
+device_map: "auto"
+max_new_tokens: 4096
+trust_remote_code: true
+
+do_async: true
+batch_size: 32
+
+verbose: true
+postprocess_verbose: true
+hf_allow_code_eval: "1"

@@ -1,0 +1,33 @@
+# Pipeline super-test config — HF Qwen2.5-Omni inference → lmms_eval evaluation (AUDIO).
+#
+# For audio, local resolve is blocked by the *_dirpath typo (audios/image) in the builtin task config,
+# so we evaluate with the lmms_eval engine, which downloads the data itself from the HF hub (independent of the builtin dirpath issue).
+# lmms_eval is installed in the current venv (submodules/lmms-eval). benchmark = lmms_eval task name.
+# audio task candidates: librispeech / clotho_aqa / vocalsound / mmau / air_bench / common_voice_15 / voicebench
+#
+# ⚠️ opt-in only (optional/) — lmms_eval uses different data/inference paths than builtin, so some
+#    pipeline-test stage assumptions (exactly NUM_DEBUG_SAMPLES items, builtin postprocess) may differ. Verify with the
+#    temp script (`python temp/run_modality.py temp/configs/audio_lmms.yaml`), then consider promoting to default/.
+#    Run:  pytest tests/pipelines/test_pipeline.py --runslow --pipeline-config=tests/configs/pipeline/optional/qwen2_omni_audio.yaml
+
+inference_engine: "huggingface"
+evaluation_engine: "lmms_eval"
+model_name_or_path: "Qwen/Qwen2.5-Omni-3B"
+exp_name: "pipeline_qwen2_omni_audio"
+
+# audio-input benchmark (lmms_eval task; librispeech_test_clean = a single ASR split)
+# NOTE: the group "librispeech" (dev_clean/dev_other/test_clean/test_other, 4 splits) CPU-decodes the
+#   whole thing and is very slow -> use a single split. (The cost of the lmms_eval data iterator
+#   ignoring the debug cap and torchcodec-decoding the whole split is separate — engine.py's limit=None.)
+benchmarks: "librispeech_test_clean"
+
+torch_dtype: "float16"
+device_map: "auto"
+max_new_tokens: 1024
+trust_remote_code: true
+
+do_async: true
+inference_concurrency: 16
+
+verbose: true
+postprocess_verbose: true

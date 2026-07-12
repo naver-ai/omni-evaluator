@@ -1,0 +1,43 @@
+meta:
+  benchmark_name: "mmau_pro"
+  split: "test"
+  lang: "en"
+  input_modality: ["audio", "text", ]
+  output_modality: ["text", ]
+  task_type: ["audio_understanding", ]
+  subtask_type: ["reasoning", ]
+dataset:
+  source: "huggingface_hub"
+  path: "gamma-lab-umd/MMAU-Pro"
+  split: "test"
+  audio_decode: false
+  audio_dirpath: "omni-evaluator/datasets/mmau_pro/test/resources/audio"
+prompts:
+  direct:
+    system_prompt:
+    # paper-strict (aligned with the post_prompt in lmms-eval mmau _default_template_yaml).
+    # Appends the standard instruction after custom.py's query build (`{question}\n{choices}`).
+    task_prompt: "{query}\nAnswer with the option's letter from the given choices directly."
+  reasoning:
+    system_prompt:
+    task_prompt: "{query}\nAnswer with the option's letter from the given choices directly."
+inference:
+  generation_options:
+    max_new_tokens: 256
+postprocess:
+  postprocess: {}
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      string_match: {}
+      exact_match: {}
+    judge_evaluator:
+      judge_binary:
+        lang: "en"
+        judge_model: "gpt-5-mini"
+        max_tokens: 1024
+        temperature: 0.0
+        seed: 42
+        do_async: true
+  display_metrics: ["string_match", "exact_match", "judge_binary", ]

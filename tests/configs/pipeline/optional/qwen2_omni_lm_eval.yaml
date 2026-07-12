@@ -1,0 +1,24 @@
+# Pipeline super-test config — HF Qwen2.5-Omni inference → builtin evaluation.
+#
+# One yaml drives the whole pipeline (download -> inference -> postprocess -> evaluate -> score).
+# tests/pipelines/test_pipeline.py runs evaluate.main() in-process with these values and
+# verifies each stage's intermediate artifacts (not an entrypoint subprocess).
+#
+# The dataset local root (LOCAL_DATA_DIR), output/cache (tmp), and debug are injected by the test.
+# debug=True, but NUM_DEBUG_SAMPLES is raised to 20 for reliability (patched by the test).
+
+inference_engine: "huggingface"
+evaluation_engine: "lm_eval_harness"
+model_name_or_path: "Qwen/Qwen2.5-Omni-3B"
+exp_name: "pipeline_qwen2_omni"
+
+# 3 benchmarks (all exact_match-style)
+benchmarks: "gsm8k,arc_challenge,hellaswag"
+
+torch_dtype: "float16"
+device_map: "auto"
+max_new_tokens: 4096
+trust_remote_code: true
+
+do_async: true
+inference_concurrency: 32

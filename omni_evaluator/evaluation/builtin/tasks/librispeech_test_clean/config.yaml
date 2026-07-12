@@ -1,0 +1,36 @@
+meta:
+  benchmark_name: "librispeech"
+  split: "test_clean"
+  lang: "en"
+  input_modality: ["audio", "text"]
+  output_modality: ["text"]
+  task_type: ["speech_recognition"]
+  subtask_type: ["asr"]
+dataset:
+  source: "huggingface_hub"
+  path: "openslr/librispeech_asr"
+  name: "clean"
+  split: "test"
+  audio_decode: false
+  audio_column: ["audio"]
+prompts:
+  direct:
+    system_prompt:
+    task_prompt:
+  reasoning:
+    system_prompt:
+    task_prompt:
+inference:
+  generation_options:
+    max_new_tokens: 1024
+postprocess:
+  asr: {}
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      wer:
+        do_normalize: true
+      cer:
+        do_normalize: true
+  display_metrics: ["wer", "cer"]

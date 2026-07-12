@@ -1,0 +1,62 @@
+# =============================================================================
+# Inference Config Template
+# =============================================================================
+# Copy this file and fill in values for your model.
+#
+# Usage:
+#   cp _template.yaml my_model.yaml
+#   # Edit my_model.yaml
+#   # Inference only (test_vllm, test_huggingface, etc.)
+#   pytest tests/integration/inference/ --inference-config=my_model.yaml
+#
+#   # Inference + evaluation (test_builtin, test_lmms_eval, etc.)
+#   pytest tests/integration/evaluation/test_builtin.py \
+#     --inference-config=my_model.yaml \
+#     --evaluation-config=builtin.yaml
+#
+# Supported inference engines:
+#   - huggingface    : Local model via HuggingFace Transformers (requires GPU)
+#   - vllm           : vLLM server (requires running server)
+#   - sglang         : SGLang server (requires running server)
+#   - api/openai     : OpenAI API (requires OPENAI_API_KEY)
+#   - api/anthropic  : Anthropic API (requires ANTHROPIC_API_KEY)
+#   - api/google     : Google Gemini API (requires GOOGLE_API_KEY)
+# =============================================================================
+
+# --- Required: Engine selection ----------------------------------------------
+inference_engine: "huggingface"       # Choose one from supported engines above
+evaluation_engine: "builtin"          # Determines benchmark namespace (builtin/lmms_eval/lm_eval_harness/vlm_eval_kit)
+
+# --- Required: Model identification ------------------------------------------
+model_name_or_path: ""                # HF model ID or local path (huggingface/vllm/sglang)
+# api_name: ""                        # API model name (api/* engines only)
+exp_name: ""                          # Experiment name for output directories
+
+# --- Optional: Server config (vllm/sglang only) -----------------------------
+# url: "http://localhost:8000"        # Server URL
+# vllm_api_version: "v1"             # vLLM API version (v0 or v1)
+
+# --- Required: Benchmarks ---------------------------------------------------
+benchmarks: "ai2d_test"               # Comma-separated benchmark names
+evaluation_methods: "generation"      # generation or perplexity (per benchmark, comma-separated)
+
+# --- Model config ------------------------------------------------------------
+torch_dtype: "float16"                # float16, bfloat16, float32
+max_new_tokens: 4096
+# device_map: "auto"                  # HuggingFace device map
+# min_pixels: 250880                  # Min image resolution
+# max_pixels: 3211264                 # Max image resolution
+trust_remote_code: true
+
+# --- Runtime config ----------------------------------------------------------
+do_async: true
+# semaphore_size: 8                   # Async concurrency limit
+batch_size: 32
+# timeout_sync: 120                   # Sync request timeout (seconds)
+# timeout_async: 120                  # Async request timeout (seconds)
+# max_retry: 3                        # Max retries on failure
+# wait_between_retry: 5              # Seconds between retries
+
+# --- Output config -----------------------------------------------------------
+verbose: true
+postprocess_verbose: true

@@ -1,0 +1,10 @@
+.web
+.env
+assets/*
+!assets/MyModel.zip
+.reflex/
+*.py[cod]
+.states
+__pycache__/
+*.db
+uploads/

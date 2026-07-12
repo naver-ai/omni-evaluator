@@ -1,0 +1,36 @@
+meta:
+  benchmark_name: "charxiv_descriptive"
+  split: "validation"
+  lang: "en"
+  input_modality: ["image", "text", ]
+  output_modality: ["text", ]
+  task_type: ["visual_question_answering", ]
+  subtask_type: ["reasoning", ]
+dataset:
+  source: "huggingface_hub"
+  path: "princeton-nlp/CharXiv"
+  split: "validation"
+prompts:
+  direct:
+    system_prompt:
+    task_prompt:
+  reasoning:
+    system_prompt:
+    task_prompt:
+inference:
+  config:
+    mode: "descriptive"
+  generation_options:
+    max_new_tokens: 4096
+evaluation:
+  method: "generation"
+  target_metrics:
+    judge_evaluator:
+      judge_rating:
+        lang: "en"
+        judge_model: "gpt-5-mini"
+        max_tokens: 256
+        temperature: 0.0
+        top_p: 1.0
+        seed: 42
+  display_metrics: ["judge_rating", ]

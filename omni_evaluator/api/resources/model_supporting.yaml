@@ -1,0 +1,78 @@
+openai:
+  default:
+    support_audio_understanding: false
+    support_image_understanding: true
+    support_text_understanding: true
+    support_video_understanding: false
+    support_audio_generation: false
+    support_image_generation: false
+    support_text_generation: true
+    support_video_generation: false
+    support_compute_perplexity: false
+    support_reasoning: false
+  overrides:
+    - api_name: o1
+      support_reasoning: true
+    - api_name: o3
+      support_reasoning: true
+    - api_name: o4-mini
+      support_reasoning: true
+    - api_name: gpt-5
+      support_reasoning: true
+    - api_name: gpt-4o-audio
+      support_audio_understanding: true
+    - api_name: chatgpt-4o-audio
+      support_audio_understanding: true
+
+anthropic:
+  default:
+    support_audio_understanding: false
+    support_image_understanding: true
+    support_text_understanding: true
+    support_video_understanding: false
+    support_audio_generation: false
+    support_image_generation: false
+    support_text_generation: true
+    support_video_generation: false
+    support_compute_perplexity: false
+    support_reasoning: false
+    # Sampling params (temperature, top_p, top_k) are accepted by default.
+    # Fable 5 / Opus 4.7+ reject them server-side (HTTP 400); the
+    # generation_options sanitizer drops them when this is false.
+    support_sampling_params: true
+  overrides:
+    - api_name: claude-3-7-sonnet
+      support_reasoning: true
+    - api_name: claude-opus-4
+      support_reasoning: true
+    - api_name: claude-sonnet-4
+      support_reasoning: true
+    # Sampling params removed on the Fable 5 / Opus 4.7+ surface — sending
+    # temperature/top_p/top_k returns 400. Prefix match covers dated variants
+    # (e.g. claude-opus-4-7-20251201). See claude-api skill / model migration.
+    - api_name: claude-fable-5
+      support_sampling_params: false
+    - api_name: claude-opus-4-7
+      support_sampling_params: false
+    - api_name: claude-opus-4-8
+      support_sampling_params: false
+
+google:
+  default:
+    support_audio_understanding: true
+    support_image_understanding: true
+    support_text_understanding: true
+    support_video_understanding: true
+    support_audio_generation: false
+    support_image_generation: false
+    support_text_generation: true
+    support_video_generation: false
+    support_compute_perplexity: false
+    support_reasoning: false
+  overrides:
+    - api_name: gemini-3
+      support_reasoning: true
+    - api_name: gemini-2.5
+      support_reasoning: true
+    - api_name: gemini-2.0-flash-thinking
+      support_reasoning: true

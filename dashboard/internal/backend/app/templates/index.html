@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OmniEvaluator</title>
+  <link rel="icon" href="/static/omni-favicon.svg?v=20260626i" type="image/svg+xml">
+  <script>
+    (function () {
+      var idx = 0;
+      try {
+        var h = (location.hash || "").replace("#", "");
+        if (h.indexOf("tab=") === 0) {
+          var v = h.slice(4);
+          if (v === "submission") idx = 0;
+          else if (v === "leaderboard") idx = 1;
+          else if (v === "inference") idx = 2;
+          else {
+            var n = parseInt(v, 10);
+            if (!isNaN(n)) idx = Math.max(0, Math.min(2, n));
+          }
+        } else {
+          var v2 = null;
+          try { v2 = localStorage.getItem("omni-internal-tab"); } catch (_) {}
+          if (v2 == null) { try { v2 = sessionStorage.getItem("omni-internal-tab"); } catch (_) {} }
+          var n2 = parseInt(v2 || "0", 10);
+          if (!isNaN(n2)) idx = Math.max(0, Math.min(2, n2));
+        }
+      } catch (_) {}
+      document.documentElement.setAttribute("data-tab", String(idx));
+    })();
+  </script>
+  <!-- Vendored & self-hosted (no external CDN; pinned: tailwind play 3.x, chart.js 4.5.1, datalabels 2.2.0).
+       Removes the runtime supply-chain/availability/SRI risk of cdn.tailwindcss.com + jsDelivr. -->
+  <script src="/static/vendor/tailwindcss.js?v=20260616qa1"></script>
+  <script src="/static/vendor/chart.umd.js?v=20260616qa1"></script>
+  <script src="/static/vendor/chartjs-plugin-datalabels.min.js?v=20260616qa1"></script>
+  <link rel="stylesheet" href="/static/dashboard.css?v=20260627audit">
+  <style>
+    /* --tab-step: per-tab slide distance = 100% / 3 tabs. Single source of truth;
+       core.js mirrors this as TAB_STEP (100/3). Keep both in sync if tab count changes. */
+    :root { --tab-step: 33.3333%; }
+    html[data-tab="0"] #content-track { transform: translateX(0%); }
+    html[data-tab="1"] #content-track { transform: translateX(calc(var(--tab-step) * -1)); }
+    html[data-tab="2"] #content-track { transform: translateX(calc(var(--tab-step) * -2)); }
+    html[data-tab="0"] #tab-submission { background-image: var(--accent-grad); color: #fff; }
+    html[data-tab="0"] #tab-leaderboard,
+    html[data-tab="0"] #tab-inference { background-image: none; background-color: transparent; color: var(--text-soft); }
+    html[data-tab="1"] #tab-leaderboard { background-image: var(--accent-grad); color: #fff; }
+    html[data-tab="1"] #tab-submission,
+    html[data-tab="1"] #tab-inference { background-image: none; background-color: transparent; color: var(--text-soft); }
+    html[data-tab="2"] #tab-inference { background-image: var(--accent-grad); color: #fff; }
+    html[data-tab="2"] #tab-submission,
+    html[data-tab="2"] #tab-leaderboard { background-image: none; background-color: transparent; color: var(--text-soft); }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900">
+  <div id="global-loading-overlay" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/80 backdrop-blur-sm pointer-events-auto hidden" role="status" aria-live="polite" aria-label="Loading">
+    <div class="flex flex-col items-center gap-4">
+      <div class="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-slate-600 font-medium">Loading...</p>
+    </div>
+  </div>
+  <div class="max-w-[100rem] mx-auto px-6 lg:px-12 xl:px-20 py-8">
+    <header class="text-center mb-8">
+      <h1 class="text-3xl font-bold app-title tracking-tight">OmniEvaluator Dashboard</h1>
+      <div class="w-16 h-0.5 rounded-full mx-auto mt-3" style="background: var(--accent);"></div>
+      <p class="mt-3"><span class="app-kicker">Internal</span></p>
+      <nav class="flex justify-center gap-1 mt-6 p-1 rounded-lg bg-white border border-slate-200 shadow-sm max-w-2xl mx-auto">
+        <button id="tab-submission" class="tab flex-1 min-w-0 px-3 py-2 rounded-md text-sm font-medium text-center tab-active text-white">Submission</button>
+        <button id="tab-leaderboard" class="tab flex-1 min-w-0 px-3 py-2 rounded-md text-sm font-medium text-center text-slate-500 hover:text-slate-900">Leaderboard</button>
+        <button id="tab-inference" class="tab flex-1 min-w-0 px-3 py-2 rounded-md text-sm font-medium text-center text-slate-500 hover:text-slate-900">Inference Viewer</button>
+      </nav>
+    </header>
+
+    <div class="content-wrapper">
+    <div id="content-track" class="content-track">
+    <div id="content-submission" class="content-panel">
+      <div class="space-y-6">
+        <section class="p-5">
+          <div class="flex items-start justify-between gap-3 mb-1">
+            <h2 class="text-lg font-semibold">Submission</h2>
+            <div class="flex items-center gap-3">
+              <span id="model-list-header" class="text-xs font-medium text-slate-500">0 models</span>
+              <div id="model-list-loading" class="hidden items-center gap-2 text-xs text-slate-500">
+                <div class="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <span>Loading...</span>
+              </div>
+            </div>
+          </div>
+          <p class="text-sm text-slate-500 mb-3">Models are auto-detected from configured sources. Choose a source to see its configuration and detected models.</p>
+
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <button type="button" class="sub-source-pill lb-pill px-3.5 py-1.5 rounded-full text-sm font-medium active" data-source="internal">Internal Path <span id="sub-count-internal" class="sub-count">0</span></button>
+            <button type="button" class="sub-source-pill lb-pill px-3.5 py-1.5 rounded-full text-sm font-medium" data-source="direct">Direct Upload <span id="sub-count-direct" class="sub-count">0</span></button>
+            <button type="button" class="sub-source-pill lb-pill px-3.5 py-1.5 rounded-full text-sm font-medium" data-source="s3">S3 <span id="sub-count-s3" class="sub-count">0</span></button>
+          </div>
+
+          <input id="model-search" type="text" placeholder="Search models..." class="w-full px-3 py-2 rounded-md border border-slate-300 bg-white text-sm mb-4">
+
+          <div class="sub-panel" data-source="internal">
+            <div class="space-y-4">
+              <div class="p-4 rounded-xl border border-slate-200 bg-[#f7f9fc] border-l-4 border-l-violet-500">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>
+                  </span>
+                  <h3 class="font-semibold">Internal Path</h3>
+                </div>
+                <p class="text-xs text-slate-500 mb-1">Set <code class="text-slate-600">OMNI_INTERNAL_OUTPUTS_PATH</code> to change.</p>
+                <p id="internal-path-info" class="text-xs text-slate-500 font-mono break-all">Loading...</p>
+              </div>
+              <div>
+                <div class="sub-models-head">Internal Path</div>
+                <div id="internal-models" class="sub-models-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sub-panel hidden" data-source="direct">
+            <div class="space-y-4">
+              <div class="p-4 rounded-xl border border-slate-200 bg-[#f7f9fc] border-l-4 border-l-cyan-500">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="w-9 h-9 rounded-lg bg-cyan-100 flex items-center justify-center text-cyan-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  </span>
+                  <h3 class="font-semibold">Direct Upload</h3>
+                </div>
+                <p class="text-xs text-slate-500 mb-2">Upload a .zip result package. Stored in <code class="text-slate-600">OMNI_INTERNAL_UPLOAD_DIR</code>.</p>
+                <button id="download-mymodel" type="button" class="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-md bg-cyan-50 text-cyan-700 text-sm font-medium hover:bg-cyan-100 mb-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download MyModel.zip
+                </button>
+                <div id="upload-zone" class="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center gap-2 cursor-pointer hover:border-cyan-500 hover:bg-cyan-50 mb-2">
+                  <input type="file" id="file-input" accept=".zip" class="hidden">
+                  <span class="text-sm text-slate-500">Click or drop .zip</span>
+                </div>
+                <p id="upload-status" class="text-xs mt-2 hidden"></p>
+              </div>
+              <div>
+                <div class="sub-models-head">Direct Upload</div>
+                <div id="direct-models" class="sub-models-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sub-panel hidden" data-source="s3">
+            <div class="space-y-4">
+              <div class="p-4 rounded-xl border border-slate-200 bg-[#f7f9fc] border-l-4 border-l-amber-500">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                  </span>
+                  <h3 class="font-semibold">S3</h3>
+                </div>
+                <p class="text-xs text-slate-500 mb-1">Set <code class="text-slate-600">S3_ACCESS_KEY</code>, <code class="text-slate-600">S3_SECRET_KEY</code>, <code class="text-slate-600">S3_BUCKET_NAME</code> to configure.</p>
+                <p id="s3-path-info" class="text-xs text-slate-500 font-mono break-all">Loading...</p>
+              </div>
+              <div>
+                <div class="sub-models-head">S3</div>
+                <div id="s3-models" class="sub-models-list"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="content-leaderboard" class="content-panel">
+      <div class="space-y-6">
+        <section class="p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Leaderboard</h2>
+            <div id="lb-scan-status" class="hidden items-center gap-2 text-xs text-slate-500">
+              <div class="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <span>Scanning models...</span>
+            </div>
+          </div>
+          <div id="lb-filters" class="lb-filters flex flex-col mb-4 p-4 rounded-xl border border-slate-200 bg-[#f7f9fc]">
+            <div id="lb-filters-toggle" class="lb-filters-header" role="button" tabindex="0" title="Show/hide filters">
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Filters</span>
+              <svg class="lb-filters-chevron w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+            <div id="lb-filters-body" class="lb-filters-body">
+              <div class="pt-3 flex items-start justify-between">
+              <div class="flex flex-col gap-3 flex-1">
+                <div class="flex items-start gap-2 flex-wrap">
+                  <div class="lb-filter-label text-xs text-slate-500">
+                    <div>Model Mode</div>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button type="button" class="lb-model-mode-pill lb-pill px-3 py-1 rounded-full text-sm font-medium active" data-mode="normal">✓ Normal</button>
+                    <button type="button" class="lb-model-mode-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-mode="debug">Debug</button>
+                  </div>
+                  <div class="text-[0.6rem] text-slate-500 leading-tight">Filter models by debug prefix.</div>
+                </div>
+                <div class="flex items-start gap-2 flex-wrap">
+                  <div class="lb-filter-label text-xs text-slate-500">
+                    <div>Sources</div>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button type="button" class="lb-source-pill lb-pill px-3 py-1 rounded-full text-sm font-medium active" data-source="internal">✓ Internal</button>
+                    <button type="button" class="lb-source-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-source="direct">Direct</button>
+                    <button type="button" class="lb-source-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-source="s3">S3</button>
+                  </div>
+                  <div class="text-[0.6rem] text-slate-500 leading-tight">Filter rows by data source.</div>
+                </div>
+                <div class="flex items-start gap-2 flex-wrap">
+                  <div class="lb-filter-label text-xs text-slate-500">
+                    <div>Modality</div>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button type="button" class="lb-modality-pill lb-pill px-3 py-1 rounded-full text-sm font-medium active" data-modality="">✓ All</button>
+                    <button type="button" class="lb-modality-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-modality="text">Text</button>
+                    <button type="button" class="lb-modality-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-modality="vision">Vision</button>
+                    <button type="button" class="lb-modality-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-modality="audio">Audio</button>
+                  </div>
+                  <div class="text-[0.6rem] text-slate-500 leading-tight">Filter benchmarks by input modality.</div>
+                </div>
+                <div class="flex items-start gap-2 flex-wrap">
+                  <div class="lb-filter-label text-xs text-slate-500">
+                    <div>Inference Engine</div>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button type="button" class="lb-inference-pill lb-pill px-3 py-1 rounded-full text-sm font-medium active" data-inference="">✓ All</button>
+                    <button type="button" class="lb-inference-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-inference="api">api</button>
+                    <button type="button" class="lb-inference-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-inference="huggingface">huggingface</button>
+                    <button type="button" class="lb-inference-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-inference="vllm">vllm</button>
+                    <button type="button" class="lb-inference-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-inference="sglang">sglang</button>
+                  </div>
+                  <div class="text-[0.6rem] text-slate-500 leading-tight">Filter rows by inference backend.</div>
+                </div>
+                <div class="flex items-start gap-2 flex-wrap">
+                  <div class="lb-filter-label text-xs text-slate-500" title="Filters benchmark columns only">
+                    <div>Evaluation Engine</div>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button type="button" class="lb-evaluation-pill lb-pill px-3 py-1 rounded-full text-sm font-medium active" data-evaluation="">✓ All</button>
+                    <button type="button" class="lb-evaluation-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-evaluation="built-in">built-in</button>
+                    <button type="button" class="lb-evaluation-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-evaluation="lmms_eval">lmms_eval</button>
+                    <button type="button" class="lb-evaluation-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-evaluation="vlm_eval_kit">vlm_eval_kit</button>
+                    <button type="button" class="lb-evaluation-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-evaluation="audio_bench">audio_bench</button>
+                  </div>
+                  <div class="text-[0.6rem] text-slate-500 leading-tight">Filter benchmark columns only.</div>
+                </div>
+                <div class="flex items-start gap-2 flex-wrap">
+                  <div class="lb-filter-label text-xs text-slate-500">
+                    <div>Value</div>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5 items-center">
+                    <button type="button" class="lb-value-pill lb-pill px-3 py-1 rounded-full text-sm font-medium active" data-value="score">✓ Score</button>
+                    <button type="button" class="lb-value-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-value="time">Time</button>
+                    <button type="button" class="lb-value-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-value="coverage">Coverage</button>
+                    <div id="lb-value-sub-wrap" class="hidden flex items-center gap-1.5 pl-1 border-l border-slate-300">
+                      <div class="lb-value-sub-group">
+                        <button type="button" class="lb-value-sub-pill lb-pill px-2.5 py-1 rounded-full text-xs font-medium" data-subtype="inference">Inference</button>
+                        <button type="button" class="lb-value-sub-pill lb-pill px-2.5 py-1 rounded-full text-xs font-medium" data-subtype="evaluation">Evaluation</button>
+                        <button type="button" class="lb-value-sub-pill lb-pill lb-value-sub-total px-2.5 py-1 rounded-full text-xs font-medium hidden" data-subtype="total">Total</button>
+                      </div>
+                      <span class="lb-value-sub-divider" aria-hidden="true"></span>
+                      <div class="lb-value-sub-group">
+                        <button type="button" class="lb-value-sub-pill lb-pill px-2.5 py-1 rounded-full text-xs font-medium" data-subtype="latency">Latency</button>
+                        <button type="button" class="lb-value-sub-pill lb-pill px-2.5 py-1 rounded-full text-xs font-medium" data-subtype="throughput">Throughput</button>
+                        <button type="button" class="lb-value-sub-pill lb-pill px-2.5 py-1 rounded-full text-xs font-medium" data-subtype="benchmarks">Benchmarks</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-[0.6rem] text-slate-500 leading-tight">Choose score/time/coverage and sub-metrics.</div>
+                </div>
+                <div class="flex items-start gap-2 flex-wrap">
+                  <div class="lb-filter-label text-xs text-slate-500">
+                    <div>Options</div>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button type="button" id="lb-avg-toggle" class="lb-pill px-3 py-1 rounded-full text-sm font-medium" title="Show mean across benchmarks">Avg</button>
+                    <button type="button" id="lb-omniscore-toggle" class="lb-pill px-3 py-1 rounded-full text-sm font-medium" title="Use judge_rating as the metric for every benchmark">OmniScore</button>
+                    <button type="button" id="lb-normalized-toggle" class="lb-pill px-3 py-1 rounded-full text-sm font-medium active" title="Multiply 0–1 scores by 100">✓ Normalized</button>
+                    <button type="button" id="lb-merge-inference-toggle" class="lb-pill px-3 py-1 rounded-full text-sm font-medium active" title="Merge same model+checkpoint into one row (best-of per benchmark)">✓ Merge Inference</button>
+                  </div>
+                  <div class="text-[0.6rem] text-slate-500 leading-tight">Avg, OmniScore, normalization, and merge toggles.</div>
+                </div>
+              </div>
+              <button id="lb-refresh" class="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 shrink-0 self-start border-0 outline-none" title="Reset filters to defaults">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                Reset
+              </button>
+              </div>
+            </div>
+          </div>
+          <div id="lb-chart-wrap" class="mb-4 p-4 rounded-2xl border border-slate-200 bg-[#f7f9fc] hidden">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-medium">Chart</span>
+              <div class="flex gap-1">
+                <button type="button" class="lb-chart-mode-pill lb-pill px-2 py-0.5 rounded-full text-xs font-medium active" data-mode="bar">Bar</button>
+                <button type="button" class="lb-chart-mode-pill lb-pill px-2 py-0.5 rounded-full text-xs font-medium" data-mode="line">Line</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-3 items-start">
+              <div id="lb-chart-models-wrap" class="lb-chart-collapse-wrap">
+                <div id="lb-chart-models-toggle" class="lb-chart-collapse-header" role="button" tabindex="0" title="Click to expand/collapse">
+                  <span class="text-xs text-slate-500">Models <span id="lb-chart-models-count" class="text-slate-400"></span></span>
+                  <svg class="lb-chart-collapse-chevron w-3.5 h-3.5 text-slate-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="lb-chart-collapse-content">
+                  <div>
+                    <div id="lb-chart-models" class="lb-dropdown-list max-h-48 overflow-y-auto border border-slate-200 rounded p-2 space-y-1 bg-white text-xs text-slate-500"></div>
+                  </div>
+                </div>
+              </div>
+              <div id="lb-chart-benchmarks-wrap" class="lb-chart-collapse-wrap">
+                <div id="lb-chart-benchmarks-toggle" class="lb-chart-collapse-header" role="button" tabindex="0" title="Click to expand/collapse">
+                  <span class="text-xs text-slate-500">Benchmarks <span id="lb-chart-benchmarks-count" class="text-slate-400"></span></span>
+                  <svg class="lb-chart-collapse-chevron w-3.5 h-3.5 text-slate-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="lb-chart-collapse-content">
+                  <div>
+                    <div id="lb-chart-benchmarks" class="lb-dropdown-list max-h-48 overflow-y-auto border border-slate-200 rounded p-2 space-y-1 bg-white text-xs text-slate-500"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="lb-chart-canvas-wrap" class="lb-chart-canvas-wrap h-64 min-h-[12rem]">
+              <canvas id="lb-chart"></canvas>
+            </div>
+          </div>
+          <div id="lb-loading" class="text-slate-500 text-sm hidden">Loading...</div>
+          <div id="lb-counts" class="text-xs text-slate-500 mb-2 hidden"></div>
+          <div id="lb-bench-above-table" class="lb-bench-row mb-2">
+            <div id="lb-bench-panel-wrap" class="lb-bench-panel-wrap">
+              <div class="lb-bench-top">
+                <span class="text-sm text-slate-500 shrink-0">Benchmarks</span>
+                <input type="text" id="lb-bench-search" placeholder="Search benchmarks..." class="lb-bench-search px-2.5 py-1.5 rounded-md text-sm bg-white border border-slate-300 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50">
+                <div class="flex gap-1 shrink-0">
+                  <button type="button" id="lb-bench-select-all" class="lb-bench-all-none-btn px-2.5 py-1 rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors">All</button>
+                  <button type="button" id="lb-bench-deselect-all" class="lb-bench-all-none-btn px-2.5 py-1 rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors">None</button>
+                </div>
+                <div id="lb-bench-toggle-area" class="flex items-center gap-1 shrink-0 cursor-pointer ml-auto" role="button" tabindex="0" title="Click to expand/collapse benchmark list">
+                  <span id="lb-table-dims" class="text-xs text-slate-500"></span>
+                  <svg class="lb-bench-chevron w-4 h-4 text-slate-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+              </div>
+              <div id="lb-bench-accordion" class="lb-bench-accordion">
+                <div>
+                  <div id="lb-bench-list" class="text-xs text-slate-500"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="lb-table-wrap" class="lb-table-wrap overflow-x-auto">
+            <table id="lb-table" class="lb-table w-full">
+              <thead id="lb-thead"></thead>
+              <tbody id="lb-tbody"></tbody>
+            </table>
+          </div>
+          <div id="lb-hidden-rows" class="lb-hidden-rows mt-3 hidden"></div>
+          <div id="lb-empty" class="text-slate-400 text-sm py-8 text-center hidden">No models for selected sources.</div>
+          <div id="lb-pagination" class="mt-4 flex justify-center gap-2 hidden"></div>
+        </section>
+      </div>
+    </div>
+
+    <div id="content-inference" class="content-panel">
+      <div class="space-y-6">
+        <section class="p-5">
+          <h2 class="text-lg font-semibold mb-1">Inference Viewer</h2>
+          <p class="text-sm text-slate-500 mb-3">Select models by source, then choose a benchmark to view sample-level predictions.</p>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-slate-500">Model Selection</span>
+            <button id="inf-reset" type="button" class="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 border-0 bg-transparent">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+              Reset
+            </button>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-slate-500">Mode</span>
+            <button type="button" class="lb-model-mode-pill lb-pill px-3 py-1 rounded-full text-sm font-medium active" data-mode="normal">✓ Normal</button>
+            <button type="button" class="lb-model-mode-pill lb-pill px-3 py-1 rounded-full text-sm font-medium" data-mode="debug">Debug</button>
+            <span class="text-[0.6rem] text-slate-400 leading-tight">Debug shows only <code>debug__</code> runs.</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <button type="button" class="inf-source-pill lb-pill px-3.5 py-1.5 rounded-full text-sm font-medium active" data-source="internal">Internal Path <span id="inf-count-internal" class="sub-count">0</span><span id="inf-sel-internal" class="inf-sel-badge hidden">0</span></button>
+            <button type="button" class="inf-source-pill lb-pill px-3.5 py-1.5 rounded-full text-sm font-medium" data-source="direct">Direct Upload <span id="inf-count-direct" class="sub-count">0</span><span id="inf-sel-direct" class="inf-sel-badge hidden">0</span></button>
+            <button type="button" class="inf-source-pill lb-pill px-3.5 py-1.5 rounded-full text-sm font-medium" data-source="s3">S3 <span id="inf-count-s3" class="sub-count">0</span><span id="inf-sel-s3" class="inf-sel-badge hidden">0</span></button>
+          </div>
+
+          <div class="inf-source-panel" data-source="internal">
+            <div class="p-3 rounded-xl border border-slate-200 bg-[#f7f9fc] border-l-4 border-l-violet-500">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>
+                </span>
+                <h3 class="text-xs font-semibold">Internal Path</h3>
+              </div>
+              <div id="inf-internal-models" class="lb-dropdown-list max-h-72 overflow-y-auto border border-slate-200 rounded-lg p-1.5 space-y-0.5 bg-white text-xs text-slate-500"></div>
+            </div>
+          </div>
+
+          <div class="inf-source-panel hidden" data-source="direct">
+            <div class="p-3 rounded-xl border border-slate-200 bg-[#f7f9fc] border-l-4 border-l-cyan-500">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="w-7 h-7 rounded-lg bg-cyan-100 flex items-center justify-center text-cyan-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </span>
+                <h3 class="text-xs font-semibold">Direct Upload</h3>
+              </div>
+              <div id="inf-direct-models" class="lb-dropdown-list max-h-72 overflow-y-auto border border-slate-200 rounded-lg p-1.5 space-y-0.5 bg-white text-xs text-slate-500"></div>
+            </div>
+          </div>
+
+          <div class="inf-source-panel hidden" data-source="s3">
+            <div class="p-3 rounded-xl border border-slate-200 bg-[#f7f9fc] border-l-4 border-l-amber-500">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                </span>
+                <h3 class="text-xs font-semibold">S3 Source</h3>
+              </div>
+              <div id="inf-s3-models" class="lb-dropdown-list max-h-72 overflow-y-auto border border-slate-200 rounded-lg p-1.5 space-y-0.5 bg-white text-xs text-slate-500"></div>
+            </div>
+          </div>
+          <div id="inf-empty-hint" class="text-xs text-slate-400 text-center py-3 mt-2">Select one or more models above to begin.</div>
+          <div id="inf-bench-wrap" class="inf-section">
+            <div class="p-3 rounded-xl border border-slate-200 bg-[#f7f9fc] border-l-4 border-l-indigo-500">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h12"/><path d="M9 6h12"/><path d="M9 18h12"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+                </span>
+                <h3 class="text-xs font-semibold">Select Benchmark</h3>
+              </div>
+              <div class="lb-bench-row">
+                <div id="inf-bench-panel-wrap" class="lb-bench-panel-wrap inf-bench-panel open">
+                  <div class="lb-bench-top inf-bench-top">
+                    <span class="inf-bench-label">Benchmarks</span>
+                    <input type="text" id="inf-bench-search" placeholder="Search benchmarks..." class="lb-bench-search px-2 py-1 rounded-md text-xs bg-white border border-slate-300 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50" disabled>
+                    <div id="inf-bench-toggle-area" class="inf-bench-selected">
+                      <span class="inf-bench-selected-label">Selected</span>
+                      <span id="inf-bench-selected" class="inf-bench-selected-value">Select benchmark</span>
+                    </div>
+                  </div>
+                  <div id="inf-bench-accordion" class="lb-bench-accordion">
+                    <div class="inf-bench-list-wrap">
+                      <div id="inf-bench-list" class="text-xs text-slate-500"></div>
+                      <div id="inf-bench-loading" class="inf-bench-loading hidden">
+                        <span class="upload-spinner"></span>
+                        <span>Loading...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="inf-viewer-wrap" class="inf-section">
+            <div class="p-3 rounded-xl border border-slate-200 bg-[#f7f9fc]">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </span>
+                <h3 class="text-xs font-semibold">Inference Viewer</h3>
+              </div>
+              <div id="inf-selected" class="text-xs text-slate-500 mb-2"></div>
+              <div id="inf-sample" class="hidden">
+                <div class="flex flex-wrap items-center gap-1.5 mb-2">
+                  <button id="inf-first" class="btn btn-ghost p-1" title="First sample">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 17l-5-5 5-5"/><path d="M18 17l-5-5 5-5"/></svg>
+                  </button>
+                  <button id="inf-prev" class="btn btn-ghost px-2 py-1">Prev</button>
+                  <span class="text-xs text-slate-500">Sample</span>
+                  <input type="number" id="inf-sample-input" min="1" class="w-14 px-1.5 py-1 rounded-lg text-xs bg-white border border-slate-300 text-center" placeholder="1">
+                  <span id="inf-nav" class="text-xs">/ 0</span>
+                  <button id="inf-next" class="btn btn-ghost px-2 py-1">Next</button>
+                  <button id="inf-last" class="btn btn-ghost p-1" title="Last sample">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 17l5-5-5-5"/><path d="M6 17l5-5-5-5"/></svg>
+                  </button>
+                  <span class="text-xs text-slate-400 ml-1">← → keys</span>
+                </div>
+                <div class="flex items-center gap-2 mb-3">
+                  <input type="range" id="inf-sample-slider" min="1" max="1" value="1" step="1" class="inf-sample-slider flex-1" title="Drag to jump to a sample" aria-label="Sample position">
+                </div>
+                <div id="inf-media-note" class="inf-media-note hidden" role="status" aria-live="polite"></div>
+                <div id="inf-content-grid" class="grid grid-cols-1 gap-4">
+                  <div id="inf-media" class="space-y-3 hidden"></div>
+                  <div class="space-y-3">
+                    <div class="p-3 rounded-xl border border-slate-200 bg-white">
+                      <h4 class="text-xs font-semibold mb-1.5 text-slate-500">Question</h4>
+                      <div id="inf-question" class="text-xs text-slate-700 whitespace-pre-wrap"></div>
+                    </div>
+                    <div id="inf-choices-wrap" class="p-3 rounded-xl border border-slate-200 bg-white hidden">
+                      <h4 class="text-xs font-semibold mb-1.5 text-slate-500">Choices</h4>
+                      <div id="inf-choices" class="text-xs text-slate-700 whitespace-pre-wrap"></div>
+                    </div>
+                    <div class="p-3 rounded-xl border border-slate-200 bg-white">
+                      <h4 class="text-xs font-semibold mb-1.5 text-slate-500">Ground Truth</h4>
+                      <div id="inf-gt" class="text-xs text-slate-700 whitespace-pre-wrap"></div>
+                    </div>
+                  </div>
+                </div>
+                <div id="inf-loading-overlay" class="hidden mt-3 flex items-center gap-2 text-xs text-slate-500">
+                  <span class="upload-spinner"></span><span>Loading sample...</span>
+                </div>
+                <div class="mt-3"><h4 class="text-xs font-semibold mb-1.5 text-slate-500">Predictions</h4><div id="inf-predictions" class="space-y-1.5"></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    </div>
+    </div>
+  </div>
+  <script src="/static/dashboard/shared.js?v=20260627audit"></script>
+  <script src="/static/dashboard/store.js?v=20260626i"></script>
+  <script src="/static/dashboard/core.js?v=20260626i"></script>
+  <script src="/static/dashboard/submission.js?v=20260626i"></script>
+  <script src="/static/dashboard/leaderboard-state.js?v=20260626i"></script>
+  <script src="/static/dashboard/leaderboard-api.js?v=20260626i"></script>
+  <script src="/static/dashboard/leaderboard-render.js?v=20260626i"></script>
+  <script src="/static/dashboard/leaderboard.js?v=20260626i"></script>
+  <script src="/static/dashboard/inference.js?v=20260627dbgfilter"></script>
+  <script src="/static/dashboard/main.js?v=20260626i"></script>
+</body>
+</html>

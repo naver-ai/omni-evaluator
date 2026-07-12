@@ -1,0 +1,4 @@
+# Generated for generative global_mmlu
+include: _it_template_yaml
+process_docs: !function utils.process_social_sciences
+task: global_mmlu_generative_it_social_sciences

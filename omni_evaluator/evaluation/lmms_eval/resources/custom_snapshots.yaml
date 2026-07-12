@@ -1,0 +1,4 @@
+# Map a Hugging Face dataset repo id to a list of candidate local snapshot paths.
+# The engine uses the first path that exists on disk, else falls back to the Hub.
+# Example:
+#   lmms-lab/ActivityNetQA: ["/data/snapshots/activitynetqa", ""]

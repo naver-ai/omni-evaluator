@@ -1,0 +1,27 @@
+task: livecodebench
+dataset_path: lighteval/code_generation_lite
+dataset_name: release_v6
+output_type: generate_until
+test_split: test
+process_docs: !function utils.process_docs
+doc_to_text: !function utils.doc_to_text
+doc_to_target: !function utils.extract_test_cases
+generation_kwargs:
+  until:
+    - "<|endoftext|>"
+  max_gen_toks: 2048
+  do_sample: false
+  temperature: 0.0
+metric_list:
+  - metric: !function utils.pass_at_k
+    aggregation: mean
+    higher_is_better: true
+repeats: 1
+num_fewshot: 0
+filter_list:
+  - name: "code_extraction"
+    filter:
+      - function: "custom"
+        filter_fn: !function utils.build_predictions
+metadata:
+  version: 1.0

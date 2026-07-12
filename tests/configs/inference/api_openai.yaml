@@ -1,0 +1,23 @@
+# OpenAI API inference engine configuration
+# Requires OPENAI_API_KEY environment variable.
+
+inference_engine: "api/openai"
+evaluation_engine: "builtin"
+api_name: "gpt-5-mini-2025-08-07"
+exp_name: "gpt_5_mini"
+
+benchmarks: "ai2d_test,chartqa_test,textvqa_validation"
+evaluation_methods: "generation,generation,generation"
+
+max_new_tokens: 4096
+
+do_async: true
+semaphore_size: 8
+batch_size: 32
+timeout_sync: 120
+timeout_async: 120
+max_retry: 3
+wait_between_retry: 5
+
+verbose: true
+postprocess_verbose: true

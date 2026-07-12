@@ -1,0 +1,63 @@
+meta:
+  benchmark_name: "hle"
+  split: "test"
+  lang: "en"
+  input_modality: ["image", "text"]
+  output_modality: ["text"]
+  task_type: ["visual_question_answering"]
+  subtask_type: ["reasoning"]
+dataset:
+  source: "huggingface_hub"
+  path: "cais/hle"
+  split: "test"
+prompts:
+  direct:
+    system_prompt: "Your response should be in the following format:\nExplanation:
+      {your explanation for your answer choice}\nAnswer: {your chosen answer}\nConfidence:
+      {your confidence score between 0% and 100% for your answer}"
+    task_prompt:
+  reasoning:
+    system_prompt: "Your response should be in the following format:\nExplanation:
+      {your explanation for your answer choice}\nAnswer: {your chosen answer}\nConfidence:
+      {your confidence score between 0% and 100% for your answer}"
+    task_prompt:
+inference:
+  generation_options:
+    max_new_tokens: 8192
+    temperature: 0.0
+evaluation:
+  method: "generation"
+  judges:
+    # HLE paper-strict judge: extracts (extracted_final_answer, correct, confidence)
+    # via JudgeResponseFormat (Pydantic BaseModel defined in custom.py).
+    # Name `judge_format` is intentionally distinct from the CLI-wide
+    # `--enable_verifier` (which produces the 0/1 verifier metric key
+    # `verifier_score`) so the two paths do not collide.
+    judge_format:
+      lang: "en"
+      judge_model: "gpt-5-mini"
+      do_async: true
+      temperature: 0.0
+      max_tokens: 2048
+      judge_prompt: |
+        Judge whether the following [response] to [question] is correct or not based on the precise and unambiguous [correct_answer] below.
+
+        [question]: {query}
+
+        [response]: {prediction}
+
+        Your judgement must be in the format and criteria specified below:
+
+        extracted_final_answer: The final exact answer extracted from the [response]. Put the extracted answer as 'None' if there is no exact, final answer to extract from the response.
+
+        [correct_answer]: {label}
+
+        reasoning: Explain why the extracted_final_answer is correct or incorrect based on [correct_answer], focusing only on if there are meaningful differences between [correct_answer] and the extracted_final_answer. Do not comment on any background to the problem, do not attempt to solve the problem, do not argue for any answer different than [correct_answer], focus only on whether the answers match.
+
+        correct: Answer 'yes' if extracted_final_answer matches the [correct_answer] given above, or is within a small margin of error for numerical problems. Answer 'no' otherwise, i.e. if there is any inconsistency, ambiguity, non-equivalency, or if the extracted answer is incorrect.
+
+        confidence: The extracted confidence score between 0% and 100% from [response]. Put 100 if there is no confidence score available.
+  target_metrics:
+    text_evaluator:
+      calibration_error: {}
+  display_metrics: ["accuracy", "calibration_error"]

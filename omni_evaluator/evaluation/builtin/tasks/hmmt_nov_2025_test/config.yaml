@@ -1,0 +1,39 @@
+meta:
+  benchmark_name: "hmmt_nov_2025"
+  split: "test"
+  lang: "en"
+  input_modality: ["text"]
+  output_modality: ["text"]
+  task_type: ["unknown"]
+  subtask_type: ["math"]
+dataset:
+  source: "huggingface_hub"
+  path: "MathArena/hmmt_nov_2025"
+  split: "train"
+prompts:
+  direct:
+    system_prompt:
+    task_prompt: "{}\nPlease put your final answer within \\boxed{{}}."
+  reasoning:
+    system_prompt:
+    task_prompt: "{}\nPlease reason step by step, and put your final answer within
+      \\boxed{{}}."
+inference:
+  direct:
+    generation_options:
+      max_new_tokens: 2048
+  reasoning:
+    generation_options:
+      max_new_tokens: 16384
+postprocess:
+  direct:
+    pipeline: ['boxed']
+  reasoning:
+    pipeline: ['think', 'boxed']  
+evaluation:
+  method: "generation"
+  do_normalize: true
+  target_metrics:
+    text_evaluator:
+      exact_match: {}
+  display_metrics: ["exact_match"]

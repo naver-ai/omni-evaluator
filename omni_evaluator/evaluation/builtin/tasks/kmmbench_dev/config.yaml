@@ -1,0 +1,33 @@
+meta:
+  benchmark_name: "kmmbench"
+  split: "dev"
+  lang: "ko"
+  input_modality: ["image", "text"]
+  output_modality: ["text"]
+  task_type: ["visual_question_answering"]
+  subtask_type: ["multiple_choice"]
+dataset:
+  source: "huggingface_hub"
+  path: "NCSOFT/K-MMBench"
+  split: "dev"
+prompts:
+  direct:
+    system_prompt:
+    task_prompt: "{}\n주어진 선택지 중에서 정답에 해당하는 보기의 알파벳(문자)만 그대로 답하세요."
+  reasoning:
+    system_prompt:
+    task_prompt: "{}\n주어진 선택지 중에서 정답에 해당하는 보기의 알파벳(문자)만 그대로 답하세요."
+inference:
+  generation_options:
+    max_new_tokens: 16
+postprocess:
+  direct:
+    pipeline: ['multichoice']
+  reasoning:
+    pipeline: ['think', 'multichoice']
+evaluation:
+  method: "generation"
+  target_metrics:
+    text_evaluator:
+      exact_match: {}
+  display_metrics: ["exact_match"]

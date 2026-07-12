@@ -1,0 +1,5 @@
+group: mmmu_pro_think
+task:
+- mmmu_pro_vision_think
+# - mmmu_pro_composite # removing composite task in formal MMMU-Pro evaluation
+- mmmu_pro_standard_think

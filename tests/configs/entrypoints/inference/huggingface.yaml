@@ -1,0 +1,23 @@
+# HuggingFace inference engine configuration
+# Requires GPU. Adjust model_name_or_path and benchmarks for your environment.
+
+inference_engine: "huggingface"
+evaluation_engine: "builtin"
+model_name_or_path: "Qwen/Qwen2.5-Omni-3B"
+reference_name: "qwen2_5_omni_3b"
+
+benchmarks: "ai2d_test,chartqa_test,textvqa_validation"
+evaluation_methods: "generation,generation,generation"
+
+torch_dtype: "float16"
+device_map: "auto"
+max_new_tokens: 4096
+min_pixels: 250880
+max_pixels: 3211264
+trust_remote_code: true
+
+do_async: true
+batch_size: 32
+
+verbose: true
+postprocess_verbose: true
